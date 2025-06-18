@@ -14,7 +14,7 @@ EchoKernel is a flexible and extensible Python framework for building AI-powered
 
 1. Clone the repository:
 ```bash
-git clone [your-repo-url]
+git clone https://github.com/Ronmenator/Echo-Py.git
 cd Echo-Py
 ```
 
