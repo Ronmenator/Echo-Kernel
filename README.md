@@ -1,8 +1,12 @@
 # EchoKernel
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 EchoKernel is a flexible and extensible Python framework for building AI-powered applications. It provides a modular architecture for working with various language models, embedding providers, and vector storage solutions, making it easy to create sophisticated AI applications with tool integration capabilities.
 
-## Features
+## 🚀 Features
 
 - 🔌 **Modular Provider System**: Easily switch between different AI providers (Azure OpenAI, OpenAI)
 - 🛠️ **Tool Integration**: Register and use custom tools with your language models
@@ -11,7 +15,7 @@ EchoKernel is a flexible and extensible Python framework for building AI-powered
 - 🔄 **Async Support**: Built with asyncio for efficient async/await operations
 - 🤖 **Advanced Agent System**: Create complex multi-agent workflows with specialized agents
 
-## Installation
+## 📦 Installation
 
 1. Clone the repository:
 ```bash
@@ -24,21 +28,47 @@ cd Echo-Py
 pip install -r requirements.txt
 ```
 
-## Configuration
+3. (Optional) Install in development mode:
+```bash
+pip install -e .
+```
+
+## ⚙️ Configuration
 
 Create a `config.py` file with your API credentials:
 
 ```python
-AZURE_OPENAI_API_KEY = "your-azure-openai-api-key"
-AZURE_OPENAI_API_BASE = "your-azure-openai-endpoint"
-AZURE_OPENAI_API_VERSION = "2024-02-15-preview"
-AZURE_OPENAI_TEXT_MODEL = "your-deployment-name"
-AZURE_OPENAI_EMBEDDING_MODEL = "your-embedding-deployment-name"
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "")
+AZURE_OPENAI_API_BASE = os.getenv("AZURE_OPENAI_API_BASE", "")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+AZURE_OPENAI_TEXT_MODEL = os.getenv("AZURE_OPENAI_TEXT_MODEL", "")
+AZURE_OPENAI_EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_MODEL", "")
 
 # Optional: For Qdrant vector storage
-QDRANT_URL = "your-qdrant-url"
-QDRANT_COLLECTION_NAME = "your-collection-name"
-QDRANT_API_KEY = "your-qdrant-api-key"
+QDRANT_URL = os.getenv("QDRANT_URL", "")
+QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
+```
+
+Or create a `.env` file:
+```env
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+AZURE_OPENAI_API_BASE=your-azure-openai-endpoint
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+AZURE_OPENAI_TEXT_MODEL=your-deployment-name
+AZURE_OPENAI_EMBEDDING_MODEL=your-embedding-deployment-name
+
+# Optional: For Qdrant vector storage
+QDRANT_URL=your-qdrant-url
+QDRANT_COLLECTION_NAME=your-collection-name
+QDRANT_API_KEY=your-qdrant-api-key
 ```
 
 ## Basic Usage
@@ -695,10 +725,51 @@ For more details on running examples, see [examples/README.md](examples/README.m
 - `QdrantStorageProvider`: For Qdrant vector database
 - `InMemoryStorageProvider`: For in-memory vector storage (default)
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions to EchoKernel! Here's how you can help:
 
-## License
+### 🐛 Reporting Bugs
+- Use the [GitHub issue tracker](https://github.com/Ronmenator/Echo-Py/issues)
+- Include a clear description of the bug and steps to reproduce
+- Provide your Python version and operating system
 
-[Your License Here] 
+### 💡 Suggesting Features
+- Open an issue with the "enhancement" label
+- Describe the feature and its use case
+- Consider if it aligns with the project's goals
+
+### 🔧 Submitting Code
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes with proper documentation
+4. Add tests if applicable
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### 📝 Code Style
+- Follow PEP 8 guidelines
+- Add docstrings to all public functions and classes
+- Include type hints where appropriate
+- Write clear commit messages
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with ❤️ for the AI community
+- Inspired by modern AI frameworks and agent systems
+- Thanks to all contributors and users
+
+## 📞 Support
+
+- 📧 Email: [Your Email]
+- 💬 Discussions: [GitHub Discussions](https://github.com/Ronmenator/Echo-Py/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/Ronmenator/Echo-Py/issues)
+
+---
+
+**Made with ❤️ by [Ronmenator](https://github.com/Ronmenator)** 
