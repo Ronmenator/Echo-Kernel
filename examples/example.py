@@ -1,4 +1,4 @@
-from code_interpreter import CodeInterpreter
+from tools.code_interpreter import CodeInterpreter
 
 def main():
     # Create an instance of the code interpreter

@@ -766,7 +766,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📧 Email: [Your Email]
 - 💬 Discussions: [GitHub Discussions](https://github.com/Ronmenator/Echo-Py/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/Ronmenator/Echo-Py/issues)
 

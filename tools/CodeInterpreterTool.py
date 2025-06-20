@@ -27,7 +27,7 @@ Example:
 """
 
 from typing import Optional, Tuple
-from code_interpreter import CodeInterpreter
+from tools.code_interpreter import CodeInterpreter
 from echo_kernel.Tool import EchoTool
 import json
 
