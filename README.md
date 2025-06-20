@@ -17,6 +17,14 @@ EchoKernel is a flexible and extensible Python framework for building AI-powered
 
 ## 📦 Installation
 
+### Option 1: Install from PyPI (Recommended)
+
+```bash
+pip install echo-kernel
+```
+
+### Option 2: Install from Source
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/Ronmenator/Echo-Py.git
@@ -31,6 +39,29 @@ pip install -r requirements.txt
 3. (Optional) Install in development mode:
 ```bash
 pip install -e .
+```
+
+### Option 3: Install with Development Dependencies
+
+For development and testing:
+
+```bash
+pip install echo-kernel[dev]
+```
+
+### Command-Line Interface
+
+After installation, you can use the CLI tool:
+
+```bash
+# Interactive mode
+echo-kernel --interactive
+
+# Single query
+echo-kernel "Tell me a joke"
+
+# Use specific provider
+echo-kernel --provider openai "Hello world"
 ```
 
 ## ⚙️ Configuration
