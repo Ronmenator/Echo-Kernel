@@ -18,6 +18,7 @@ Then you can run examples from anywhere:
 python examples/agent-routing.py
 python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
+python examples/novella-writer.py
 ```
 
 ### Option 2: Run from Root Directory
@@ -28,6 +29,7 @@ Navigate to the project root and run:
 python examples/agent-routing.py
 python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
+python examples/novella-writer.py
 ```
 
 ### Option 3: Run from Examples Directory
@@ -39,6 +41,7 @@ cd examples
 python agent-routing.py
 python task-decomposer.py
 python agent-routing-with-memory.py
+python novella-writer.py
 ```
 
 ## Available Examples
@@ -58,6 +61,17 @@ Full example showing how to set up the agent system with memory capabilities:
 - Complete provider setup including embeddings and vector storage
 - Memory-enhanced agents with context retention
 - Shows how to enable/disable memory features
+
+### novella-writer.py
+Advanced example demonstrating multi-level task decomposition for creative writing:
+- **7-level decomposition process** from prompt to complete novella
+- **Specialized agents** for different writing tasks (design, character development, scene writing, etc.)
+- **Quality assurance** with built-in review and editing process
+- **Progressive refinement** where each level builds upon previous outputs
+- Generates a complete 10-chapter novella with character development, plot arcs, and scene details
+- Saves the final novella to `generated_novella.txt`
+
+See `novella-writer-README.md` for detailed documentation of this example.
 
 ## Memory Setup
 

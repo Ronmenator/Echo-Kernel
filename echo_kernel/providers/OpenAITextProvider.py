@@ -32,7 +32,7 @@ class OpenAITextProvider(ITextProvider):
                 top_p=top_p,
                 frequency_penalty=frequency_penalty,
                 presence_penalty=presence_penalty,
-                tools=[{"type": "function", "function": tool} for tool in tools] if tools else None,
+                tools=tools,
                 tool_choice="auto" if tools else None
             )
             

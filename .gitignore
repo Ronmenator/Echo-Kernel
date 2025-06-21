@@ -67,4 +67,7 @@ wheels/
 
 # Docker
 .docker/
-docker-compose.override.yml 
+docker-compose.override.yml
+
+# App
+app/

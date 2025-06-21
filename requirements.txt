@@ -13,4 +13,11 @@ python-dotenv>=1.0.0
 requests>=2.25.0
 
 # Type hints support
-typing-extensions>=4.0.0 
+typing-extensions>=4.0.0
+
+# Microsoft Word document creation
+python-docx>=0.8.11
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0 

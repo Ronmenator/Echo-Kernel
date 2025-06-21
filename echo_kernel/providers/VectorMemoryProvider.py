@@ -17,6 +17,7 @@ class VectorMemoryProvider(ITextMemory):
         self.embedding_provider = embedding_provider
         self.storage_provider = storage_provider or InMemoryStorageProvider()
         self._texts: Dict[str, str] = {}  # text_id -> text
+        self._text_to_vector: Dict[str, str] = {}  # text_id -> vector_id
     
     async def add_text(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """Add text to the memory store and return its ID."""
@@ -29,11 +30,18 @@ class VectorMemoryProvider(ITextMemory):
         # Store text separately
         self._texts[text_id] = text
         
+        # Prepare metadata, ensuring text_id is always included
+        final_metadata = metadata.copy() if metadata else {}
+        final_metadata["text_id"] = text_id
+        
         # Add vector to storage
-        await self.storage_provider.add_vector(
+        vector_id = await self.storage_provider.add_vector(
             embedding_array,
-            {"text_id": text_id, **(metadata or {})}
+            final_metadata
         )
+        
+        # Store mapping between text_id and vector_id
+        self._text_to_vector[text_id] = vector_id
         
         return text_id
     
@@ -51,10 +59,24 @@ class VectorMemoryProvider(ITextMemory):
         
         # Add text to results
         for result in results:
-            text_id = result["metadata"]["text_id"]
-            result["text"] = self._texts[text_id]
-            # Remove text_id from metadata as it's now in the main result
-            del result["metadata"]["text_id"]
+            # The text_id should be in the metadata from the storage provider
+            metadata = result.get("metadata", {})
+            text_id = metadata.get("text_id")
+            
+            if text_id and text_id in self._texts:
+                result["text"] = self._texts[text_id]
+                # Remove text_id from metadata as it's now in the main result
+                if "text_id" in metadata:
+                    del metadata["text_id"]
+            else:
+                # Debug: print more information about what's happening
+                print(f"Debug: text_id not found in metadata or text not in memory")
+                print(f"  Result ID: {result.get('id')}")
+                print(f"  Metadata keys: {list(metadata.keys())}")
+                print(f"  Metadata: {metadata}")
+                print(f"  Available text IDs: {list(self._texts.keys())}")
+                print(f"  Text ID from metadata: {text_id}")
+                continue
         
         return results
     
@@ -63,8 +85,13 @@ class VectorMemoryProvider(ITextMemory):
         if text_id not in self._texts:
             return None
         
+        # Get vector_id from mapping
+        vector_id = self._text_to_vector.get(text_id)
+        if not vector_id:
+            return None
+        
         # Get vector and metadata from storage
-        vector_data = await self.storage_provider.get_vector(text_id)
+        vector_data = await self.storage_provider.get_vector(vector_id)
         if vector_data is None:
             return None
         
@@ -79,10 +106,16 @@ class VectorMemoryProvider(ITextMemory):
         if text_id not in self._texts:
             return False
         
+        # Get vector_id from mapping
+        vector_id = self._text_to_vector.get(text_id)
+        if not vector_id:
+            return False
+        
         # Delete from storage
-        success = await self.storage_provider.delete_vector(text_id)
+        success = await self.storage_provider.delete_vector(vector_id)
         if success:
-            # Delete text
+            # Delete text and mapping
             del self._texts[text_id]
+            del self._text_to_vector[text_id]
         
         return success 

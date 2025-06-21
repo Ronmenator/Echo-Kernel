@@ -24,6 +24,11 @@ class InMemoryStorageProvider(IStorageProvider):
         
         vector_id = str(uuid.uuid4())
         
+        # Ensure vector is 2D and has correct data type for FAISS
+        if vector.ndim == 1:
+            vector = vector.reshape(1, -1)
+        vector = vector.astype(np.float32)
+        
         # Add vector to FAISS index
         self._index.add(vector)
         
@@ -41,6 +46,11 @@ class InMemoryStorageProvider(IStorageProvider):
         """Search for similar vectors using FAISS."""
         if self._index is None or not self._metadata:
             return []
+        
+        # Ensure query vector is 2D and has correct data type for FAISS
+        if query_vector.ndim == 1:
+            query_vector = query_vector.reshape(1, -1)
+        query_vector = query_vector.astype(np.float32)
         
         # Search using FAISS
         distances, indices = self._index.search(query_vector, limit)
