@@ -307,7 +307,7 @@ class EchoKernel:
         
         for provider in self._text_providers:
             if isinstance(provider, ITextProvider):
-                return await provider.generate_text(prompt, system_prompt=system_prompt, tools=tools_to_use)
+                return await provider.generate_text(prompt, system_message=system_prompt or "", tools=tools_to_use)
             
         raise ValueError("No text providers registered")
 
