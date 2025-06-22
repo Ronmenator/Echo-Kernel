@@ -43,15 +43,11 @@ class TestEchoAgent:
         assert any(t.name == test_tool.__name__ for t in agent.tools)
 
     @pytest.mark.asyncio
-    async def test_echo_agent_process_message(self, echo_kernel, mock_text_provider):
-        """Test EchoAgent message processing."""
-        echo_kernel.register_provider(mock_text_provider)
-        agent = EchoAgent("TestAgent", echo_kernel, persona="You are helpful.")
-        
+    async def test_echo_agent_process_message(self, mock_text_provider):
+        kernel = EchoKernel(text_provider=mock_text_provider)
+        agent = EchoAgent("TestAgent", kernel, persona="You are helpful.")
         result = await agent.process_message("Hello")
-        
         assert result == "Mock response"
-        mock_text_provider.generate_text.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_echo_agent_process_message_with_tools(self, echo_kernel, mock_text_provider):

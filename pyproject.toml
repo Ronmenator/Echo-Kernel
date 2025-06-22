@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "echo-kernel"
-version = "0.1.0"
+version = "0.1.2"
 description = "A flexible and extensible Python framework for building AI-powered applications"
 readme = "README.md"
 license = {text = "MIT"}

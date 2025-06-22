@@ -26,7 +26,7 @@ Example:
     ```
 """
 
-from typing import List, Dict, Any, Callable, Optional, TypeVar, Type, cast, Protocol, runtime_checkable
+from typing import List, Dict, Any, Callable, Optional, TypeVar, Type, cast, Protocol, runtime_checkable, Union
 from echo_kernel.IEmbeddingProvider import IEmbeddingProvider
 from echo_kernel.ITextProvider import ITextProvider
 from echo_kernel.ITextMemory import ITextMemory
@@ -36,6 +36,7 @@ from echo_kernel.IStorageProvider import IStorageProvider
 import asyncio
 import inspect
 import functools
+from functools import partial
 
 T = TypeVar('T')
 
@@ -52,13 +53,22 @@ class EchoKernel:
         _tools: Dictionary mapping tool names to tool instances
     """
     
-    def __init__(self):
+    def __init__(self, text_provider: Optional[ITextProvider] = None, embedding_provider: Optional[IEmbeddingProvider] = None, storage_provider: Optional[IStorageProvider] = None, tools: Optional[List[EchoTool]] = None):
         """Initialize the EchoKernel."""
         self._text_providers: List[ITextProvider] = []
         self._embedding_providers: List[IEmbeddingProvider] = []
         self._memory_providers: List[ITextMemory] = []
         self._storage_providers: List[IStorageProvider] = []
-        self._tools: Dict[str, IEchoTool] = {}  # Keyed by tool name
+        self._tools: dict[str, EchoTool] = {}
+        if text_provider:
+            self._text_providers.append(text_provider)
+        if embedding_provider:
+            self._embedding_providers.append(embedding_provider)
+        if storage_provider:
+            self._storage_providers.append(storage_provider)
+        if tools:
+            for tool in tools:
+                self.register_tool(tool)
 
     @property
     def text_providers(self) -> List[ITextProvider]:
@@ -76,7 +86,7 @@ class EchoKernel:
         return self._memory_providers
 
     @property
-    def tools(self) -> List[IEchoTool]:
+    def tools(self) -> List[EchoTool]:
         return list(self._tools.values())
 
     def register_provider(self, provider: any) -> None:
@@ -108,35 +118,13 @@ class EchoKernel:
             elif isinstance(provider, IStorageProvider):
                 self._storage_providers.append(provider)
 
-    def register_tool(self, tool: Callable) -> None:
-        """
-        Register a tool with the kernel.
-
-        Tools are callable functions that can be invoked by AI models during
-        text generation. They must implement the IEchoTool protocol.
-
-        Args:
-            tool: The tool to register. Must implement the IEchoTool protocol.
-
-        Raises:
-            TypeError: If the tool doesn't implement the IEchoTool protocol.
-
-        Example:
-            ```python
-            @EchoTool(description="A custom tool")
-            def my_tool(param: str) -> str:
-                return f"Processed: {param}"
-
-            kernel.register_tool(my_tool)
-            ```
-        """
-        # If the tool is not already decorated, decorate it
-        if not hasattr(tool, 'name') or not hasattr(tool, 'definition'):
-            tool = EchoTool(description=f"Tool: {tool.__name__}")(tool)
-        # Prevent duplicate registrations by name
+    def register_tool(self, tool: EchoTool):
         if tool.name in self._tools:
-            return
+            raise ValueError(f"Tool with name {tool.name} already registered")
         self._tools[tool.name] = tool
+
+    def get_tool(self, tool_name: str) -> Optional[EchoTool]:
+        return self._tools.get(tool_name)
 
     def get_service(self, service_type: Type[T]) -> Optional[T]:
         """
@@ -188,26 +176,25 @@ class EchoKernel:
         """Clear all registered tools."""
         self._tools.clear()
 
-    def get_tool_descriptions(self) -> List[Dict[str, Any]]:
+    def get_tool_definitions(self) -> List[Dict[str, Any]]:
         """Get descriptions of all registered tools."""
-        return [tool.definition for tool in self.tools]
+        return [tool.to_dict() for tool in self.tools]
 
-    async def execute_tool(self, tool: IEchoTool | str, *args, **kwargs) -> Any:
+    async def execute_tool(self, tool: Union[EchoTool, str], **kwargs) -> Any:
         """Execute a registered tool."""
         if isinstance(tool, str):
-            tool_obj = self._tools.get(tool)
-            if not tool_obj:
-                raise ValueError(f"Tool not found: {tool}")
-            tool = tool_obj
-        elif hasattr(tool, 'name') and tool.name in self._tools:
-            tool = self._tools[tool.name]
+            tool_to_run = self._tools.get(tool)
+            if not tool_to_run:
+                raise ValueError(f"Tool '{tool}' not found")
         else:
-            raise ValueError("Tool not registered")
-        
-        result = tool(*args, **kwargs)
-        if inspect.isawaitable(result):
-            return await result
-        return result
+            tool_to_run = tool
+
+        if inspect.iscoroutinefunction(tool_to_run.func):
+            return await tool_to_run.func(**kwargs)
+        else:
+            loop = asyncio.get_running_loop()
+            func = partial(tool_to_run.func, **kwargs)
+            return await loop.run_in_executor(None, func)
 
     async def add_text_to_memory(self, text: str, metadata: Dict[str, Any] = None) -> None:
         """Add text to memory."""
@@ -253,43 +240,11 @@ class EchoKernel:
                     return await provider.generate_text_with_tools(prompt, **kwargs)
                 else:
                     # Fall back to generate_text with tools
-                    return await self.generate_text(prompt, tools=self.tool_definitions, tool_implementations=self.tool_instances, **kwargs)
+                    return await self.generate_text(prompt, tools=self.get_tool_definitions(), **kwargs)
         
         raise ValueError("No text providers registered")
 
-    @property
-    def tool_definitions(self) -> List[Dict[str, Any]]:
-        """
-        Get all registered tool definitions.
-        
-        Returns:
-            List of tool definition dictionaries that can be passed to AI providers.
-        """
-        return [tool.definition for tool in self.tools]
-
-    @property
-    def tool_instances(self) -> Dict[str, Callable]:
-        """
-        Get all registered tool instances.
-        
-        Returns:
-            Dictionary mapping tool names to their callable implementations.
-        """
-        return {name: tool for name, tool in self._tools.items()}
-
-    async def generate_text(
-        self, 
-        prompt: str, 
-        system_message: str = "", 
-        context: Dict = None, 
-        temperature: float = 0.7, 
-        max_tokens: int = 1000, 
-        top_p: float = 1, 
-        frequency_penalty: float = 0, 
-        presence_penalty: float = 0, 
-        tools = None,
-        tool_implementations = None
-    ) -> str:
+    async def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """
         Generate text using registered text providers.
         
@@ -298,15 +253,7 @@ class EchoKernel:
         
         Args:
             prompt: The main prompt for text generation.
-            system_message: Optional system message to set context.
-            context: Optional context dictionary for the generation.
-            temperature: Controls randomness (0.0 = deterministic, 1.0 = very random).
-            max_tokens: Maximum number of tokens to generate.
-            top_p: Nucleus sampling parameter.
-            frequency_penalty: Penalty for frequent tokens.
-            presence_penalty: Penalty for new tokens.
-            tools: Optional list of tool definitions to use.
-            tool_implementations: Optional dictionary mapping tool names to their callable implementations.
+            system_prompt: Optional system message to set context.
         
         Returns:
             Generated text string.
@@ -318,29 +265,17 @@ class EchoKernel:
             ```python
             result = await kernel.generate_text(
                 "Write a Python function to sort a list",
-                temperature=0.3,
-                max_tokens=500
+                system_prompt="You are a helpful assistant."
             )
             print(result)
             ```
         """
-        # Use registered tools if no tools are explicitly provided
-        if tools is None:
-            tools = self.tool_definitions
-        
-        # Use provided tool implementations or fall back to registered ones
-        if tool_implementations is None:
-            tool_implementations = self.tool_instances
-
         if not self._text_providers:
             raise ValueError("No text providers registered")
         
         for provider in self._text_providers:
             if isinstance(provider, ITextProvider):
-                return await provider.generate_text(
-                    prompt, system_message, context, temperature, max_tokens, 
-                    top_p, frequency_penalty, presence_penalty, tools, tool_implementations
-                )
+                return await provider.generate_text(prompt, system_prompt=system_prompt, tools=self.get_tool_definitions())
             
         raise ValueError("No text providers registered")
 

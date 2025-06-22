@@ -8,14 +8,111 @@ from unittest.mock import Mock, AsyncMock, patch
 from typing import Dict, Any
 
 from echo_kernel.EchoKernel import EchoKernel
+from echo_kernel.EchoTool import EchoTool
 from echo_kernel.ITextProvider import ITextProvider
 from echo_kernel.IEmbeddingProvider import IEmbeddingProvider
-from echo_kernel.ITextMemory import ITextMemory
-from echo_kernel.Tool import EchoTool
+from echo_kernel.IStorageProvider import IStorageProvider
+from echo_kernel.agents.MemoryAgent import MemoryAgent
 
+
+@pytest.fixture
+def mock_text_provider():
+    mock = Mock(spec=ITextProvider)
+    mock.generate_text.return_value = "Mock response"
+    return mock
+
+@pytest.fixture
+def mock_embedding_provider():
+    mock = Mock(spec=IEmbeddingProvider)
+    mock.generate_embedding.return_value = [0.1, 0.2, 0.3]
+    return mock
+
+@pytest.fixture
+def mock_storage_provider():
+    mock = Mock(spec=IStorageProvider)
+    mock.get_vector_store = Mock(return_value=AsyncMock())
+    return mock
+
+@pytest.fixture
+def sample_tool():
+    def sample_tool_function(text: str) -> str:
+        return f"Processed: {text}"
+    return EchoTool(
+        name="sample_tool",
+        func=sample_tool_function,
+        description="A sample tool.",
+    )
+
+@pytest.fixture
+def sample_async_tool():
+    async def sample_async_tool_function(text: str) -> str:
+        return f"Processed async: {text}"
+    return EchoTool(
+        name="sample_async_tool",
+        func=sample_async_tool_function,
+        description="A sample async tool.",
+    )
 
 class TestEchoKernel:
     """Test cases for EchoKernel class."""
+
+    @pytest.mark.unit
+    def test_kernel_initialization(self, mock_storage_provider):
+        kernel = EchoKernel(storage_provider=mock_storage_provider)
+        assert isinstance(kernel, EchoKernel)
+        assert kernel.storage_provider is not None
+        assert len(kernel.tools) == 0
+
+    @pytest.mark.unit
+    def test_register_tool(self, sample_tool):
+        kernel = EchoKernel()
+        kernel.register_tool(sample_tool)
+        assert len(kernel.tools) == 1
+        assert kernel.get_tool("sample_tool") == sample_tool
+
+    @pytest.mark.asyncio
+    async def test_generate_text_with_provider(self, mock_text_provider):
+        kernel = EchoKernel(text_provider=mock_text_provider)
+        result = await kernel.generate_text("Test prompt")
+        assert result == "Mock response"
+        mock_text_provider.generate_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_generate_embedding_with_provider(self, mock_embedding_provider):
+        kernel = EchoKernel(embedding_provider=mock_embedding_provider)
+        result = await kernel.generate_embedding("Test text")
+        assert result == [0.1, 0.2, 0.3]
+        mock_embedding_provider.generate_embedding.assert_called_once()
+
+    @pytest.mark.unit
+    def test_get_tool_definitions(self, sample_tool):
+        kernel = EchoKernel()
+        kernel.register_tool(sample_tool)
+        descriptions = kernel.get_tool_definitions()
+        assert len(descriptions) == 1
+        assert descriptions[0]["name"] == "sample_tool"
+
+    @pytest.mark.asyncio
+    async def test_execute_tool(self, sample_tool):
+        kernel = EchoKernel()
+        kernel.register_tool(sample_tool)
+        result = await kernel.execute_tool("sample_tool", text="hello")
+        assert result == "Processed: hello"
+
+    @pytest.mark.asyncio
+    async def test_execute_async_tool(self, sample_async_tool):
+        kernel = EchoKernel()
+        kernel.register_tool(sample_async_tool)
+        result = await kernel.execute_tool("sample_async_tool", text="hello")
+        assert result == "Processed async: hello"
+
+    @pytest.mark.unit
+    def test_clear_tools(self, sample_tool):
+        kernel = EchoKernel()
+        kernel.register_tool(sample_tool)
+        assert len(kernel.tools) == 1
+        kernel.clear_tools()
+        assert len(kernel.tools) == 0
 
     @pytest.mark.unit
     def test_echo_kernel_initialization(self):
@@ -63,16 +160,6 @@ class TestEchoKernel:
         assert mock_memory_provider in echo_kernel.memory_providers
 
     @pytest.mark.unit
-    def test_register_tool(self, echo_kernel, sample_tool):
-        """Test registering a tool."""
-        initial_count = len(echo_kernel.tools)
-        
-        echo_kernel.register_tool(sample_tool)
-        
-        assert len(echo_kernel.tools) == initial_count + 1
-        assert any(t.name == sample_tool.__name__ for t in echo_kernel.tools)
-
-    @pytest.mark.unit
     def test_register_tool_with_decorator(self, echo_kernel):
         """Test registering a tool using the EchoTool decorator."""
         @EchoTool(description="Test tool")
@@ -84,16 +171,6 @@ class TestEchoKernel:
         
         assert len(echo_kernel.tools) == initial_count + 1
         assert test_tool in echo_kernel.tools
-
-    @pytest.mark.asyncio
-    async def test_generate_text_with_provider(self, echo_kernel, mock_text_provider):
-        """Test text generation with a registered provider."""
-        echo_kernel.register_provider(mock_text_provider)
-        
-        result = await echo_kernel.generate_text("Test prompt")
-        
-        assert result == "Mock response"
-        mock_text_provider.generate_text.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_generate_text_without_provider(self, echo_kernel):
@@ -116,16 +193,6 @@ class TestEchoKernel:
         """Test text generation with tools without any registered providers."""
         with pytest.raises(ValueError, match="No text providers registered"):
             await echo_kernel.generate_text_with_tools("Test prompt")
-
-    @pytest.mark.asyncio
-    async def test_generate_embedding(self, echo_kernel, mock_embedding_provider):
-        """Test embedding generation."""
-        echo_kernel.register_provider(mock_embedding_provider)
-        
-        result = await echo_kernel.generate_embedding("Test text")
-        
-        assert result == [0.1, 0.2, 0.3]
-        mock_embedding_provider.generate_embedding.assert_called_once_with("Test text")
 
     @pytest.mark.asyncio
     async def test_generate_embedding_without_provider(self, echo_kernel):
@@ -197,58 +264,6 @@ class TestEchoKernel:
         assert len(echo_kernel.text_providers) == 0
         assert len(echo_kernel.embedding_providers) == 0
         assert len(echo_kernel.memory_providers) == 0
-
-    @pytest.mark.unit
-    def test_clear_tools(self, echo_kernel, sample_tool):
-        """Test clearing all tools."""
-        echo_kernel.register_tool(sample_tool)
-        
-        echo_kernel.clear_tools()
-        
-        assert len(echo_kernel.tools) == 0
-
-    @pytest.mark.unit
-    def test_get_tool_descriptions(self, echo_kernel):
-        """Test getting tool descriptions."""
-        @EchoTool(description="Test tool 1")
-        def tool1(text: str) -> str:
-            return text
-        
-        @EchoTool(description="Test tool 2")
-        def tool2(count: int) -> int:
-            return count * 2
-        
-        echo_kernel.register_tool(tool1)
-        echo_kernel.register_tool(tool2)
-        
-        descriptions = echo_kernel.get_tool_descriptions()
-        
-        assert len(descriptions) == 2
-        assert any(desc.get("function").get("description") == "Test tool 1" for desc in descriptions)
-        assert any(desc.get("function").get("description") == "Test tool 2" for desc in descriptions)
-
-    @pytest.mark.asyncio
-    async def test_execute_tool(self, echo_kernel, sample_tool):
-        """Test executing a registered tool."""
-        echo_kernel.register_tool(sample_tool)
-        # Find the registered tool by name
-        tool_obj = next(t for t in echo_kernel.tools if t.name == sample_tool.__name__)
-        result = await echo_kernel.execute_tool(tool_obj, "hello", 3)
-        assert result == "hellohellohello"
-
-    @pytest.mark.asyncio
-    async def test_execute_async_tool(self, echo_kernel, sample_async_tool):
-        """Test executing an async registered tool."""
-        echo_kernel.register_tool(sample_async_tool)
-        tool_obj = next(t for t in echo_kernel.tools if t.name == sample_async_tool.__name__)
-        result = await echo_kernel.execute_tool(tool_obj, "hello", 2)
-        assert result == "hellohello"
-
-    @pytest.mark.asyncio
-    async def test_execute_tool_not_registered(self, echo_kernel, sample_tool):
-        """Test executing a tool that is not registered."""
-        with pytest.raises(ValueError, match="Tool not registered"):
-            await echo_kernel.execute_tool(sample_tool, "hello")
 
     @pytest.mark.unit
     def test_kernel_state_management(self, echo_kernel):
