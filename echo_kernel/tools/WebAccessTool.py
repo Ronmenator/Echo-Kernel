@@ -46,7 +46,9 @@ async def search_web(query: str, max_results: int = 5) -> Dict[str, Any]:
     :param max_results: The maximum number of results to return.
     :return: A dictionary containing the search results.
     """
-    return await web_access.search_web(query, max_results)
+    if max_results is None:
+        max_results = 5
+    return await web_access.search_web(query, max_results=max_results)
 
 async def get_web_content(url: str) -> Dict[str, Any]:
     """
@@ -54,7 +56,7 @@ async def get_web_content(url: str) -> Dict[str, Any]:
     :param url: The URL of the web page.
     :return: A dictionary containing the content of the web page.
     """
-    return await web_access.get_web_content(url)
+    return await web_access.get_page_content(url)
 
 def web_access_tools() -> List[EchoTool]:
     """

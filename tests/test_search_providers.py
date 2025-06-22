@@ -9,7 +9,7 @@ import asyncio
 from echo_kernel.providers.DuckDuckGoSearchProvider import DuckDuckGoSearchProvider
 from echo_kernel.providers.GoogleSearchProvider import GoogleSearchProvider
 from echo_kernel.providers.BingSearchProvider import BingSearchProvider
-from tools.web_access import WebAccess
+from echo_kernel.tools.web_access import WebAccess
 
 class TestDuckDuckGoSearchProvider:
     """Test DuckDuckGo search provider."""

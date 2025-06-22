@@ -272,7 +272,9 @@ class EchoKernel:
         
         raise ValueError("No text providers registered")
 
-    async def generate_text(self, prompt: str, system_prompt: Optional[str] = None, tools: Optional[List[Dict[str, Any]]] = None) -> str:
+    async def generate_text(self, prompt: str, system_prompt: Optional[str] = None, tools: Optional[List[Dict[str, Any]]] = None, 
+                          temperature: float = 0.7, max_tokens: int = 1000, top_p: float = 1, 
+                          frequency_penalty: float = 0, presence_penalty: float = 0, context: Dict = None) -> str:
         """
         Generate text using registered text providers.
         
@@ -283,6 +285,12 @@ class EchoKernel:
             prompt: The main prompt for text generation.
             system_prompt: Optional system message to set context.
             tools: Optional list of tool definitions to pass to the provider.
+            temperature: Controls randomness in the response (0.0 to 2.0).
+            max_tokens: Maximum number of tokens to generate.
+            top_p: Controls diversity via nucleus sampling (0.0 to 1.0).
+            frequency_penalty: Reduces repetition of frequent tokens (-2.0 to 2.0).
+            presence_penalty: Reduces repetition of any tokens (-2.0 to 2.0).
+            context: Optional context dictionary for the generation.
         
         Returns:
             Generated text string.
@@ -294,7 +302,9 @@ class EchoKernel:
             ```python
             result = await kernel.generate_text(
                 "Write a Python function to sort a list",
-                system_prompt="You are a helpful assistant."
+                system_prompt="You are a helpful assistant.",
+                temperature=0.8,
+                max_tokens=500
             )
             print(result)
             ```
@@ -307,7 +317,17 @@ class EchoKernel:
         
         for provider in self._text_providers:
             if isinstance(provider, ITextProvider):
-                return await provider.generate_text(prompt, system_message=system_prompt or "", tools=tools_to_use)
+                return await provider.generate_text(
+                    prompt, 
+                    system_message=system_prompt or "", 
+                    tools=tools_to_use,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    top_p=top_p,
+                    frequency_penalty=frequency_penalty,
+                    presence_penalty=presence_penalty,
+                    context=context
+                )
             
         raise ValueError("No text providers registered")
 

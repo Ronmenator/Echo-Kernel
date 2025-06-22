@@ -284,26 +284,35 @@ class TestSpecialistRouterAgent:
 
     @pytest.mark.asyncio
     async def test_specialist_router_route_with_retries(self, echo_kernel, mock_text_provider):
-        """Test routing with retries."""
         echo_kernel.register_provider(mock_text_provider)
         specialists = {
             "coding": EchoAgent("Coder", echo_kernel),
             "writing": EchoAgent("Writer", echo_kernel)
         }
+
+        async def mock_run(*args, **kwargs):
+            return "invalid"
+
+        for agent in specialists.values():
+            agent.run = mock_run
+
         router = SpecialistRouterAgent("SpecialistRouter", echo_kernel, specialists, max_retries=2)
 
+        call_count = {"count": 0}
         def validator(result: str) -> bool:
+            call_count["count"] += 1
             return False  # Always fail validation
 
-        # Mock responses
         mock_text_provider.generate_text.side_effect = [
-            "coding", "invalid",  # First attempt
-            "writing", "invalid",  # Second attempt
-            "coding", "final result"  # Third attempt
+            "coding",  # First routing decision
+            "writing",  # Second routing decision
+            "coding",   # Third routing decision (if needed)
+            "writing",  # Fourth routing decision (if needed)
         ]
 
         with pytest.raises(ValueError, match="Failed to route task after 2 attempts"):
-            await router.route_with_validation("Task", validator)
+            await router.route_with_validation("Task", validator=validator)
+        assert call_count["count"] == 2
 
 
 class TestMemoryAgent:
