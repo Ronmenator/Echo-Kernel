@@ -127,4 +127,12 @@ class InMemoryStorageProvider(IStorageProvider):
         del self._metadata[vector_id]
         del self._id_to_index[vector_id]
         
-        return True 
+        return True
+    
+    async def reset(self) -> None:
+        """Reset the storage provider to initial state."""
+        self._index = None
+        self._metadata.clear()
+        self._id_to_index.clear()
+        self._index_to_id.clear()
+        self._next_index = 0 

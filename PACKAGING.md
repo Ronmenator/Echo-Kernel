@@ -91,7 +91,7 @@ The project includes a GitHub Actions workflow that automatically releases to Py
 ```bash
 # Create and push a new version tag
 git tag v0.1.0
-git push origin v0.1.0
+git push Echo-py v0.1.0
 ```
 
 ## Configuration Files
@@ -139,7 +139,7 @@ Follow semantic versioning (MAJOR.MINOR.PATCH):
 # Update version in pyproject.toml
 # Then create tag
 git tag v0.1.1
-git push origin v0.1.1
+git push Echo-py v0.1.1
 ```
 
 ## Command-Line Interface

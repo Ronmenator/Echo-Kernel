@@ -174,7 +174,107 @@ The code interpreter tool:
 - Returns execution results including stdout and stderr
 - Indicates success/failure of code execution
 
-### 3. Vector Memory
+### 3. Web Access and Search Tools
+
+EchoKernel provides comprehensive web access and search capabilities through a modular provider system. You can use different search engines (DuckDuckGo, Google, Bing) and retrieve web page content safely.
+
+#### Web Content Retrieval
+
+```python
+from tools.WebAccessTool import get_web_content
+
+# Register the web content tool
+kernel.register_tool(get_web_content)
+
+# Use the tool to retrieve web page content
+result = await kernel.generate_text(
+    "Get the content from https://example.com and summarize it"
+)
+print(result)
+```
+
+#### Web Search with Multiple Providers
+
+EchoKernel supports multiple search providers:
+
+**DuckDuckGo (Free, no API key required):**
+```python
+from tools.WebAccessTool import search_web
+from echo_kernel.providers.DuckDuckGoSearchProvider import DuckDuckGoSearchProvider
+
+# Register the search tool
+kernel.register_tool(search_web)
+
+# Use DuckDuckGo search (default)
+result = await kernel.generate_text(
+    "Search for Python programming tutorials and summarize the top 3 results"
+)
+print(result)
+```
+
+**Google Search (requires API key and search engine ID):**
+```python
+from echo_kernel.providers.GoogleSearchProvider import GoogleSearchProvider
+from tools.web_access import WebAccess
+
+# Create Google search provider
+google_provider = GoogleSearchProvider(
+    api_key="your_google_api_key",
+    search_engine_id="your_search_engine_id"
+)
+
+# Create WebAccess with Google provider
+web_access = WebAccess(search_provider=google_provider)
+
+# Perform search
+results = await web_access.search_web("machine learning tutorials", max_results=5)
+```
+
+**Bing Search (requires API key):**
+```python
+from echo_kernel.providers.BingSearchProvider import BingSearchProvider
+
+# Create Bing search provider
+bing_provider = BingSearchProvider(api_key="your_bing_api_key")
+
+# Create WebAccess with Bing provider
+web_access = WebAccess(search_provider=bing_provider)
+
+# Perform search
+results = await web_access.search_web("AI news", max_results=5)
+```
+
+#### Direct WebAccess Usage
+
+You can also use the WebAccess class directly:
+
+```python
+from tools.web_access import WebAccess
+from echo_kernel.providers.DuckDuckGoSearchProvider import DuckDuckGoSearchProvider
+
+# Create WebAccess with DuckDuckGo provider
+web_access = WebAccess(search_provider=DuckDuckGoSearchProvider())
+
+# Get web page content
+content = web_access.get_page_content("https://example.com")
+print(f"Title: {content['title']}")
+print(f"Word count: {content['word_count']}")
+
+# Search the web
+search_results = await web_access.search_web("Python programming", max_results=3)
+for result in search_results['results']:
+    print(f"- {result['title']}: {result['url']}")
+```
+
+The web access tools provide:
+- Safe web content retrieval with rate limiting
+- Multiple search provider support
+- URL validation and sanitization
+- Content extraction and cleaning
+- Comprehensive error handling
+- Respectful usage with proper headers and timeouts
+
+### 4. Vector Memory
 
 Set up vector memory for semantic search capabilities:
 

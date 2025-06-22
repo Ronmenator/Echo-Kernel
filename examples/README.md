@@ -18,7 +18,8 @@ Then you can run examples from anywhere:
 python examples/agent-routing.py
 python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
-python examples/novella-writer.py
+python examples/web-access-example.py
+python examples/web-search-example.py
 ```
 
 ### Option 2: Run from Root Directory
@@ -29,7 +30,8 @@ Navigate to the project root and run:
 python examples/agent-routing.py
 python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
-python examples/novella-writer.py
+python examples/web-access-example.py
+python examples/web-search-example.py
 ```
 
 ### Option 3: Run from Examples Directory
@@ -41,7 +43,8 @@ cd examples
 python agent-routing.py
 python task-decomposer.py
 python agent-routing-with-memory.py
-python novella-writer.py
+python web-access-example.py
+python web-search-example.py
 ```
 
 ## Available Examples
@@ -61,6 +64,25 @@ Full example showing how to set up the agent system with memory capabilities:
 - Complete provider setup including embeddings and vector storage
 - Memory-enhanced agents with context retention
 - Shows how to enable/disable memory features
+
+### web-access-example.py
+Demonstrates the web access tool capabilities:
+- **Safe web content retrieval** with rate limiting and URL validation
+- **HTML content extraction** including title, text, and metadata
+- **Error handling** for various HTTP status codes and network issues
+- **Direct tool usage** and integration with EchoKernel
+- **URL validation testing** showing security measures
+- Shows how to register and use web access tools with AI agents
+
+### web-search-example.py
+Demonstrates the new search provider system:
+- **DuckDuckGo search provider** (free, no API key required)
+- **Google search provider** (requires API key and search engine ID)
+- **Bing search provider** (requires API key)
+- **WebAccess class integration** with different search providers
+- **EchoKernel integration** with search tools
+- **Provider configuration** and fallback mechanisms
+- Shows how to use different search engines for web queries
 
 ### novella-writer.py
 Advanced example demonstrating multi-level task decomposition for creative writing:

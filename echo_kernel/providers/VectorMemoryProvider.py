@@ -31,7 +31,10 @@ class VectorMemoryProvider(ITextMemory):
         self._texts[text_id] = text
         
         # Prepare metadata, ensuring text_id is always included
-        final_metadata = metadata.copy() if metadata else {}
+        # Create a new dictionary to avoid modifying the original
+        final_metadata = {}
+        if metadata:
+            final_metadata.update(metadata)
         final_metadata["text_id"] = text_id
         
         # Add vector to storage
@@ -58,6 +61,7 @@ class VectorMemoryProvider(ITextMemory):
         results = await self.storage_provider.search_vectors(query_array, limit)
         
         # Add text to results
+        valid_results = []
         for result in results:
             # The text_id should be in the metadata from the storage provider
             metadata = result.get("metadata", {})
@@ -65,20 +69,17 @@ class VectorMemoryProvider(ITextMemory):
             
             if text_id and text_id in self._texts:
                 result["text"] = self._texts[text_id]
-                # Remove text_id from metadata as it's now in the main result
-                if "text_id" in metadata:
-                    del metadata["text_id"]
+                # Create a copy of metadata without text_id for the result
+                result_metadata = metadata.copy()
+                if "text_id" in result_metadata:
+                    del result_metadata["text_id"]
+                result["metadata"] = result_metadata
+                valid_results.append(result)
             else:
-                # Debug: print more information about what's happening
-                print(f"Debug: text_id not found in metadata or text not in memory")
-                print(f"  Result ID: {result.get('id')}")
-                print(f"  Metadata keys: {list(metadata.keys())}")
-                print(f"  Metadata: {metadata}")
-                print(f"  Available text IDs: {list(self._texts.keys())}")
-                print(f"  Text ID from metadata: {text_id}")
+                # Skip this result as it's not properly linked to text
                 continue
         
-        return results
+        return valid_results
     
     async def get_text(self, text_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve text and its metadata by ID."""
@@ -118,4 +119,66 @@ class VectorMemoryProvider(ITextMemory):
             del self._texts[text_id]
             del self._text_to_vector[text_id]
         
-        return success 
+        return success
+    
+    async def debug_memory_state(self) -> Dict[str, Any]:
+        """Debug method to check the state of memory and identify any inconsistencies."""
+        debug_info = {
+            "texts_count": len(self._texts),
+            "text_to_vector_count": len(self._text_to_vector),
+            "text_ids": list(self._texts.keys()),
+            "vector_ids": list(self._text_to_vector.values()),
+            "orphaned_vectors": []
+        }
+        
+        # Check for orphaned vectors (vectors in storage but not in text mapping)
+        for text_id, vector_id in self._text_to_vector.items():
+            vector_data = await self.storage_provider.get_vector(vector_id)
+            if vector_data is None:
+                debug_info["orphaned_vectors"].append({
+                    "text_id": text_id,
+                    "vector_id": vector_id,
+                    "issue": "Vector not found in storage"
+                })
+            else:
+                metadata = vector_data.get("metadata", {})
+                stored_text_id = metadata.get("text_id")
+                if stored_text_id != text_id:
+                    debug_info["orphaned_vectors"].append({
+                        "text_id": text_id,
+                        "vector_id": vector_id,
+                        "stored_text_id": stored_text_id,
+                        "issue": "Text ID mismatch"
+                    })
+        
+        return debug_info
+    
+    async def cleanup_orphaned_vectors(self) -> int:
+        """Clean up orphaned vectors that exist in storage but not in the text mapping.
+        
+        Returns:
+            Number of orphaned vectors cleaned up
+        """
+        debug_info = await self.debug_memory_state()
+        orphaned_count = 0
+        
+        for orphaned in debug_info["orphaned_vectors"]:
+            vector_id = orphaned["vector_id"]
+            # Delete the orphaned vector from storage
+            success = await self.storage_provider.delete_vector(vector_id)
+            if success:
+                orphaned_count += 1
+        
+        return orphaned_count
+    
+    async def clear_memory(self) -> None:
+        """Clear all stored texts and vectors from memory."""
+        # Clear text storage
+        self._texts.clear()
+        self._text_to_vector.clear()
+        
+        # Reset storage provider
+        if hasattr(self.storage_provider, 'reset'):
+            await self.storage_provider.reset()
+        
+        print("Memory cleared successfully.") 

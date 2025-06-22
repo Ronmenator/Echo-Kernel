@@ -9,8 +9,12 @@ faiss-cpu>=1.7.0
 # Environment and configuration
 python-dotenv>=1.0.0
 
-# HTTP requests (used by OpenAI client)
+# HTTP requests (used by OpenAI client and search providers)
 requests>=2.25.0
+aiohttp>=3.8.0
+
+# HTML parsing for web access
+beautifulsoup4>=4.9.0
 
 # Type hints support
 typing-extensions>=4.0.0
