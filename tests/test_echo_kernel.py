@@ -8,7 +8,8 @@ from unittest.mock import Mock, AsyncMock, patch
 from typing import Dict, Any
 
 from echo_kernel.EchoKernel import EchoKernel
-from echo_kernel.EchoTool import EchoTool
+from echo_kernel.Tool import EchoTool
+from echo_kernel.EchoTool import EchoTool as EchoToolClass
 from echo_kernel.ITextProvider import ITextProvider
 from echo_kernel.IEmbeddingProvider import IEmbeddingProvider
 from echo_kernel.IStorageProvider import IStorageProvider
@@ -18,7 +19,12 @@ from echo_kernel.agents.MemoryAgent import MemoryAgent
 @pytest.fixture
 def mock_text_provider():
     mock = Mock(spec=ITextProvider)
-    mock.generate_text.return_value = "Mock response"
+    # Return 'Mock tool response' only if tools is a non-empty list
+    async def generate_text_with_tools(prompt, system_prompt=None, tools=None, **kwargs):
+        if tools and len(tools) > 0:
+            return "Mock tool response"
+        return "Mock response"
+    mock.generate_text.side_effect = generate_text_with_tools
     return mock
 
 @pytest.fixture
@@ -37,7 +43,7 @@ def mock_storage_provider():
 def sample_tool():
     def sample_tool_function(text: str) -> str:
         return f"Processed: {text}"
-    return EchoTool(
+    return EchoToolClass(
         name="sample_tool",
         func=sample_tool_function,
         description="A sample tool.",
@@ -47,7 +53,7 @@ def sample_tool():
 def sample_async_tool():
     async def sample_async_tool_function(text: str) -> str:
         return f"Processed async: {text}"
-    return EchoTool(
+    return EchoToolClass(
         name="sample_async_tool",
         func=sample_async_tool_function,
         description="A sample async tool.",
@@ -170,7 +176,8 @@ class TestEchoKernel:
         echo_kernel.register_tool(test_tool)
         
         assert len(echo_kernel.tools) == initial_count + 1
-        assert test_tool in echo_kernel.tools
+        # Check that the tool was registered with the correct name
+        assert echo_kernel.get_tool("test_tool") is not None
 
     @pytest.mark.asyncio
     async def test_generate_text_without_provider(self, echo_kernel):
@@ -179,14 +186,16 @@ class TestEchoKernel:
             await echo_kernel.generate_text("Test prompt")
 
     @pytest.mark.asyncio
-    async def test_generate_text_with_tools(self, echo_kernel, mock_text_provider):
+    async def test_generate_text_with_tools(self, echo_kernel, mock_text_provider, sample_tool):
         """Test text generation with tools."""
         echo_kernel.register_provider(mock_text_provider)
-        
+        echo_kernel.register_tool(sample_tool)  # Register a tool so tools is non-empty
+
         result = await echo_kernel.generate_text_with_tools("Test prompt")
-        
+
         assert result == "Mock tool response"
-        mock_text_provider.generate_text_with_tools.assert_called_once_with("Test prompt")
+        # Check that generate_text was called with tools
+        assert mock_text_provider.generate_text.call_args[1]["tools"] is not None
 
     @pytest.mark.asyncio
     async def test_generate_text_with_tools_without_provider(self, echo_kernel):

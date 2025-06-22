@@ -31,7 +31,7 @@ from echo_kernel.IEmbeddingProvider import IEmbeddingProvider
 from echo_kernel.ITextProvider import ITextProvider
 from echo_kernel.ITextMemory import ITextMemory
 from echo_kernel.IEchoTool import IEchoTool
-from echo_kernel.Tool import EchoTool
+from echo_kernel.EchoTool import EchoTool
 from echo_kernel.IStorageProvider import IStorageProvider
 import asyncio
 import inspect
@@ -89,6 +89,11 @@ class EchoKernel:
     def tools(self) -> List[EchoTool]:
         return list(self._tools.values())
 
+    @property
+    def storage_provider(self) -> Optional[IStorageProvider]:
+        """Get the first registered storage provider."""
+        return self._storage_providers[0] if self._storage_providers else None
+
     def register_provider(self, provider: any) -> None:
         """
         Register a provider service with the kernel.
@@ -118,10 +123,33 @@ class EchoKernel:
             elif isinstance(provider, IStorageProvider):
                 self._storage_providers.append(provider)
 
-    def register_tool(self, tool: EchoTool):
-        if tool.name in self._tools:
-            raise ValueError(f"Tool with name {tool.name} already registered")
-        self._tools[tool.name] = tool
+    def register_tool(self, tool: Union[EchoTool, Callable]):
+        """Register a tool with the kernel. If a tool with the same name already exists, it will be updated."""
+        if isinstance(tool, EchoTool):
+            self._tools[tool.name] = tool
+        elif callable(tool):
+            # Handle decorated functions from EchoTool decorator
+            if hasattr(tool, '_echo_tool_metadata'):
+                # Create EchoTool instance from decorated function
+                metadata = tool._echo_tool_metadata
+                echo_tool = EchoTool(
+                    name=metadata.name,
+                    func=tool,
+                    description=metadata.description,
+                    parameters=metadata.parameters
+                )
+                self._tools[echo_tool.name] = echo_tool
+            else:
+                # Create EchoTool instance from regular function
+                echo_tool = EchoTool(
+                    name=tool.__name__,
+                    func=tool,
+                    description=tool.__doc__ or "",
+                    parameters=None
+                )
+                self._tools[echo_tool.name] = echo_tool
+        else:
+            raise ValueError("Tool must be an EchoTool instance or a callable function")
 
     def get_tool(self, tool_name: str) -> Optional[EchoTool]:
         return self._tools.get(tool_name)
@@ -244,7 +272,7 @@ class EchoKernel:
         
         raise ValueError("No text providers registered")
 
-    async def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    async def generate_text(self, prompt: str, system_prompt: Optional[str] = None, tools: Optional[List[Dict[str, Any]]] = None) -> str:
         """
         Generate text using registered text providers.
         
@@ -254,6 +282,7 @@ class EchoKernel:
         Args:
             prompt: The main prompt for text generation.
             system_prompt: Optional system message to set context.
+            tools: Optional list of tool definitions to pass to the provider.
         
         Returns:
             Generated text string.
@@ -273,9 +302,12 @@ class EchoKernel:
         if not self._text_providers:
             raise ValueError("No text providers registered")
         
+        # Use provided tools or get from registered tools
+        tools_to_use = tools if tools is not None else self.get_tool_definitions()
+        
         for provider in self._text_providers:
             if isinstance(provider, ITextProvider):
-                return await provider.generate_text(prompt, system_prompt=system_prompt, tools=self.get_tool_definitions())
+                return await provider.generate_text(prompt, system_prompt=system_prompt, tools=tools_to_use)
             
         raise ValueError("No text providers registered")
 
