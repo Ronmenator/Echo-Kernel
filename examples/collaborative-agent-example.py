@@ -43,12 +43,24 @@ async def editor_writer_collaboration():
         "end your response with 'Final version'."
     )
     
+    # Define prompt building functions
+    def build_editor_prompt(current_result: str) -> str:
+        if not current_result or current_result == "Write a short story (200-300 words) about a robot who discovers emotions for the first time.":
+            return "Write a short story (200-300 words) about a robot who discovers emotions for the first time."
+        else:
+            return f"Review this story and provide specific feedback on how to improve it:\n\n{current_result}\n\nProvide constructive feedback. If you're satisfied, end with 'Final version'."
+    
+    def build_writer_prompt(current_result: str, editor_feedback: str) -> str:
+        return f"Original task: {current_result}\n\nEditor feedback:\n{editor_feedback}\n\nWrite the improved version. If you're satisfied, end with 'Final version'."
+    
     # Create collaborative agent
     collaborative = CollaborativeAgent(
         name="EditorWriter",
         kernel=kernel,
         agent_a=editor_agent,
         agent_b=writer_agent,
+        build_agent_a_prompt=build_editor_prompt,
+        build_agent_b_prompt=build_writer_prompt,
         max_iterations=5,
         stop_phrase="Final version",
         agent_a_role="Editor",
@@ -94,12 +106,24 @@ async def code_review_collaboration():
         "maintainable code. If you're satisfied with your implementation, end with 'Final version'."
     )
     
+    # Define prompt building functions
+    def build_reviewer_prompt(current_result: str) -> str:
+        if not current_result or current_result == "Write a Python function that efficiently finds the longest common subsequence between two strings.":
+            return "Write a Python function that efficiently finds the longest common subsequence between two strings."
+        else:
+            return f"Review this code and provide feedback on quality, efficiency, and best practices:\n\n{current_result}\n\nProvide specific, actionable feedback. If the code meets your standards, end with 'Final version'."
+    
+    def build_developer_prompt(current_result: str, reviewer_feedback: str) -> str:
+        return f"Original task: {current_result}\n\nCode review feedback:\n{reviewer_feedback}\n\nWrite the improved code with proper documentation. If you're satisfied, end with 'Final version'."
+    
     # Create collaborative agent
     collaborative = CollaborativeAgent(
         name="CodeReview",
         kernel=kernel,
         agent_a=reviewer_agent,
         agent_b=developer_agent,
+        build_agent_a_prompt=build_reviewer_prompt,
+        build_agent_b_prompt=build_developer_prompt,
         max_iterations=4,
         stop_phrase="Final version",
         agent_a_role="Code Reviewer",
@@ -143,12 +167,24 @@ async def silent_collaboration():
         "Be detailed and thorough in your execution. If you're satisfied, end with 'Final version'."
     )
     
+    # Define prompt building functions
+    def build_planner_prompt(current_result: str) -> str:
+        if not current_result or current_result == "Create a marketing strategy for a new eco-friendly water bottle.":
+            return "Create a marketing strategy for a new eco-friendly water bottle."
+        else:
+            return f"Review this plan and provide improvements or additional considerations:\n\n{current_result}\n\nProvide strategic feedback. If the plan is complete, end with 'Final version'."
+    
+    def build_executor_prompt(current_result: str, planner_feedback: str) -> str:
+        return f"Original task: {current_result}\n\nPlanning feedback:\n{planner_feedback}\n\nProvide detailed implementation. If you're satisfied, end with 'Final version'."
+    
     # Create collaborative agent
     collaborative = CollaborativeAgent(
         name="SilentCollaboration",
         kernel=kernel,
         agent_a=planner_agent,
         agent_b=executor_agent,
+        build_agent_a_prompt=build_planner_prompt,
+        build_agent_b_prompt=build_executor_prompt,
         max_iterations=3,
         stop_phrase="Final version",
         agent_a_role="Planner",

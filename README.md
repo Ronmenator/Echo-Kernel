@@ -859,12 +859,24 @@ from echo_kernel.agents.CollaborativeAgent import CollaborativeAgent
 editor_agent = EchoAgent("Editor", kernel, "You are a strict editor providing feedback.")
 writer_agent = EchoAgent("Writer", kernel, "You are a writer who implements feedback.")
 
+# Define prompt building functions
+def build_editor_prompt(current_result: str) -> str:
+    if not current_result:
+        return "Write a short story about a robot."
+    else:
+        return f"Review this story and provide feedback:\n\n{current_result}"
+
+def build_writer_prompt(current_result: str, editor_feedback: str) -> str:
+    return f"Original task: {current_result}\nEditor feedback: {editor_feedback}\n\nImprove the story based on this feedback."
+
 # Create collaborative agent
 collaborative = CollaborativeAgent(
     name="EditorWriter",
     kernel=kernel,
     agent_a=editor_agent,
     agent_b=writer_agent,
+    build_agent_a_prompt=build_editor_prompt,
+    build_agent_b_prompt=build_writer_prompt,
     max_iterations=5,
     stop_phrase="Final version",
     agent_a_role="Editor",

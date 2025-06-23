@@ -1,6 +1,6 @@
 from echo_kernel.EchoAgent import EchoAgent
 from echo_kernel.IEchoAgent import IEchoAgent
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 
 class CollaborativeAgent(IEchoAgent):
     """
@@ -13,11 +13,21 @@ class CollaborativeAgent(IEchoAgent):
     Example:
         editor_agent = EchoAgent("Editor", kernel, "You are a strict editor providing feedback.")
         writer_agent = EchoAgent("Writer", kernel, "You are a writer who implements feedback.")
-        collaborative = CollaborativeAgent("EditorWriter", kernel, editor_agent, writer_agent)
+        
+        def build_editor_prompt(current_result: str) -> str:
+            return f"Review this work and provide feedback: {current_result}"
+            
+        def build_writer_prompt(current_result: str, editor_feedback: str) -> str:
+            return f"Original task: {current_result}\nEditor feedback: {editor_feedback}\nImplement the feedback."
+        
+        collaborative = CollaborativeAgent("EditorWriter", kernel, editor_agent, writer_agent,
+                                         build_agent_a_prompt=build_editor_prompt,
+                                         build_agent_b_prompt=build_writer_prompt)
         result = await collaborative.run("Write a short story about a robot.")
     """
     
     def __init__(self, name: str, kernel, agent_a: IEchoAgent, agent_b: IEchoAgent, 
+                 build_agent_a_prompt: Callable[[str], str], build_agent_b_prompt: Callable[[str, str], str],
                  max_iterations: int = 10, stop_phrase: str = "Final version", 
                  agent_a_role: str = "Agent A", agent_b_role: str = "Agent B"):
         """
@@ -28,6 +38,8 @@ class CollaborativeAgent(IEchoAgent):
             kernel: EchoKernel instance
             agent_a: First sub-agent (e.g., editor)
             agent_b: Second sub-agent (e.g., writer)
+            build_agent_a_prompt: Function that takes current_result and returns prompt for agent A
+            build_agent_b_prompt: Function that takes (current_result, agent_a_result) and returns prompt for agent B
             max_iterations: Maximum number of iterations before stopping
             stop_phrase: Phrase that indicates the collaboration should stop
             agent_a_role: Role description for agent A (used in prompts)
@@ -37,6 +49,8 @@ class CollaborativeAgent(IEchoAgent):
         self.kernel = kernel
         self.agent_a = agent_a
         self.agent_b = agent_b
+        self.build_agent_a_prompt = build_agent_a_prompt
+        self.build_agent_b_prompt = build_agent_b_prompt
         self.max_iterations = max_iterations
         self.stop_phrase = stop_phrase
         self.agent_a_role = agent_a_role
@@ -63,20 +77,7 @@ class CollaborativeAgent(IEchoAgent):
                  top_p: float = 1, frequency_penalty: float = 0, presence_penalty: float = 0, 
                  context: Dict = None, system_prompt: str = None) -> str:
         """Run the collaborative workflow."""
-        return await self.collaborate(task, temperature, max_tokens, top_p, 
-                                    frequency_penalty, presence_penalty, context, system_prompt)
-
-    async def collaborate(self, task: str, temperature: float = 0.7, max_tokens: int = 1000, 
-                         top_p: float = 1, frequency_penalty: float = 0, presence_penalty: float = 0, 
-                         context: Dict = None, system_prompt: str = None) -> str:
-        """
-        Execute the collaborative workflow between the two agents.
-        
-        The workflow alternates between agent A and agent B until one adds the stop_phrase
-        or the maximum iterations are reached.
-        """
-        current_task = task
-        current_result = ""
+        current_result = task
         self._iteration_count = 0
         stop = False
         for i in range(self.max_iterations):
@@ -85,7 +86,7 @@ class CollaborativeAgent(IEchoAgent):
             # Agent A's turn (e.g., editor providing feedback)
             if self.kernel.agent_logging_enabled: print(f"[{self.name}] {self.agent_a_role} turn (iteration {i+1}):")
             
-            agent_a_prompt = self._build_agent_a_prompt(current_task, current_result, i)
+            agent_a_prompt = self.build_agent_a_prompt(current_result)
             agent_a_result = await self.agent_a.run(agent_a_prompt, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, context, system_prompt)
             
             if self.kernel.agent_logging_enabled: print(f"[{self.agent_a.name}] {agent_a_result}")
@@ -99,7 +100,7 @@ class CollaborativeAgent(IEchoAgent):
             # Agent B's turn (e.g., writer implementing feedback)
             if self.kernel.agent_logging_enabled: print(f"[{self.name}] {self.agent_b_role} turn (iteration {i+1}):")
             
-            agent_b_prompt = self._build_agent_b_prompt(current_task, agent_a_result, i)
+            agent_b_prompt = self.build_agent_b_prompt(current_result, agent_a_result)
             agent_b_result = await self.agent_b.run(agent_b_prompt, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, context, system_prompt)
             
             if self.kernel.agent_logging_enabled: print(f"[{self.agent_b.name}] {agent_b_result}")
@@ -116,24 +117,6 @@ class CollaborativeAgent(IEchoAgent):
         if self.kernel.agent_logging_enabled: print(f"[{self.name}] Maximum iterations ({self.max_iterations}) reached.")
         
         return current_result
-
-    def _build_agent_a_prompt(self, original_task: str, current_result: str, iteration: int) -> str:
-        """Build the prompt for agent A (e.g., editor)."""
-        if iteration == 0:
-            # First iteration - agent A starts the process
-            return f"Original task: {original_task}\n\nPlease start working on this task."
-        else:
-            # Subsequent iterations - agent A provides feedback
-            return f"Original task: {original_task}\n\nCurrent result:\n{current_result}\n\nPlease review and provide feedback or improvements. If you're satisfied, end your response with '{self.stop_phrase}'."
-
-    def _build_agent_b_prompt(self, original_task: str, agent_a_feedback: str, iteration: int) -> str:
-        """Build the prompt for agent B (e.g., writer)."""
-        if iteration == 0:
-            # First iteration - agent B responds to agent A's initial work
-            return f"Original task: {original_task}\n\n{self.agent_a_role}'s work:\n{agent_a_feedback}\n\nPlease continue or improve upon this work."
-        else:
-            # Subsequent iterations - agent B implements feedback
-            return f"Original task: {original_task}\n\n{self.agent_a_role}'s feedback:\n{agent_a_feedback}\n\nPlease implement the feedback and improve the work. If you're satisfied with the result, end your response with '{self.stop_phrase}'."
 
     def reset(self) -> None:
         """Reset the iteration counter."""
