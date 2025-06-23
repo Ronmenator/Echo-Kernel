@@ -318,6 +318,44 @@ EchoKernel provides a powerful agent system that makes it incredibly easy to cre
 - **RouterAgent**: Routes tasks to the most appropriate specialist agent
 - **SpecialistRouterAgent**: Enhanced router with retry logic and validation
 - **MemoryAgent**: Maintains context across conversations using vector memory
+- **CollaborativeAgent**: Manages two sub-agents in a synchronous loop until one decides to stop
+
+### Agent Logging Configuration
+
+By default, agents print progress information and debug messages to help you understand what's happening during execution. You can control this behavior in several ways:
+
+#### Method 1: Kernel Constructor Parameter
+
+```python
+# Disable agent logging when creating the kernel
+kernel = EchoKernel(agent_logging_enabled=False)
+
+# Enable agent logging (default behavior)
+kernel = EchoKernel(agent_logging_enabled=True)
+```
+
+#### Method 2: Environment Variable
+
+Add to your `.env` file or set as an environment variable:
+
+```env
+# Disable agent logging
+AGENT_LOGGING_ENABLED=False
+
+# Enable agent logging (default)
+AGENT_LOGGING_ENABLED=True
+```
+
+#### Method 3: Configuration File
+
+Update your `config.py` file:
+
+```python
+# Agent Logging Configuration
+AGENT_LOGGING_ENABLED = False  # Disable agent logging
+```
+
+When logging is disabled, agents will run silently without printing progress messages, making them suitable for production environments or when you want cleaner output.
 
 ### Complex Agent Example
 
@@ -809,6 +847,36 @@ print(result)
 memory_agent = MemoryAgent("MemoryAgent", kernel, memory_interface, base_agent)
 result = await memory_agent.run("What did we discuss about weather APIs?")
 ```
+
+#### Collaborative Agent Workflow
+
+The `CollaborativeAgent` enables two agents to work together iteratively, perfect for scenarios like editor-writer collaboration or code review:
+
+```python
+from echo_kernel.agents.CollaborativeAgent import CollaborativeAgent
+
+# Create specialized agents
+editor_agent = EchoAgent("Editor", kernel, "You are a strict editor providing feedback.")
+writer_agent = EchoAgent("Writer", kernel, "You are a writer who implements feedback.")
+
+# Create collaborative agent
+collaborative = CollaborativeAgent(
+    name="EditorWriter",
+    kernel=kernel,
+    agent_a=editor_agent,
+    agent_b=writer_agent,
+    max_iterations=5,
+    stop_phrase="Final version",
+    agent_a_role="Editor",
+    agent_b_role="Writer"
+)
+
+# Run the collaboration
+result = await collaborative.run("Write a short story about a robot.")
+print(result)
+```
+
+The collaboration continues until one agent adds the stop phrase to their response, making it perfect for iterative improvement workflows.
 
 The agent system makes it incredibly easy to build sophisticated AI workflows. With just a few lines of code, you can create systems that:
 

@@ -66,7 +66,8 @@ class TaskDecomposerAgent(IEchoAgent):
                                              presence_penalty=presence_penalty, context=context, 
                                              system_prompt=system_prompt)
 
-        print(f"[{self.name}] Plan generated:\n{plan}\n")
+        if self.kernel.agent_logging_enabled:
+            print(f"[{self.name}] Plan generated:\n{plan}\n")
 
         # Step 2: Parse the subtasks
         subtasks = self._parse_subtasks(plan)
@@ -74,7 +75,8 @@ class TaskDecomposerAgent(IEchoAgent):
         # Step 3: Execute each subtask
         results = []
         for i, subtask in enumerate(subtasks):
-            print(f"[{self.name}] Executing Subtask {i+1}: {subtask}")
+            if self.kernel.agent_logging_enabled:
+                print(f"[{self.name}] Executing Subtask {i+1}: {subtask}")
             result = await self.executor_agent.run(subtask, temperature, max_tokens, top_p, 
                                                  frequency_penalty, presence_penalty, context, system_prompt)
             results.append(f"Subtask {i+1} Result:\n{result}\n")

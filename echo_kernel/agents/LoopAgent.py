@@ -43,10 +43,12 @@ class LoopAgent(IEchoAgent):
         
         for i in range(self.max_iterations):
             self._iteration_count = i + 1
-            print(f"[{self.name}] Step {i+1}:")
+            if self.kernel.agent_logging_enabled:
+                print(f"[{self.name}] Step {i+1}:")
             result = await self.agent.run(current_task, temperature, max_tokens, top_p, 
                                         frequency_penalty, presence_penalty, context, system_prompt)
-            print(result)
+            if self.kernel.agent_logging_enabled:
+                print(result)
 
             # Check stop condition
             should_stop = False

@@ -50,7 +50,8 @@ class SpecialistRouterAgent(IEchoAgent):
             
             if agent_name in self.agents:
                 agent = self.agents[agent_name]
-                print(f"[{self.name}] Routing to agent: {agent_name}")
+                if self.kernel.agent_logging_enabled:
+                    print(f"[{self.name}] Routing to agent: {agent_name}")
                 
                 # Execute the task
                 result = await agent.run(task, temperature, max_tokens, top_p, 
@@ -58,20 +59,25 @@ class SpecialistRouterAgent(IEchoAgent):
                 
                 # If no validator, return result immediately
                 if validator is None:
-                    print(f"[DEBUG] No validator provided, returning result")
+                    if self.kernel.agent_logging_enabled:
+                        print(f"[DEBUG] No validator provided, returning result")
                     return result
                 else:
-                    print(f"[DEBUG] Validator provided, calling validator")
+                    if self.kernel.agent_logging_enabled:
+                        print(f"[DEBUG] Validator provided, calling validator")
                     # Validate result
                     if validator(result):
-                        print(f"[DEBUG] Validation passed")
+                        if self.kernel.agent_logging_enabled:
+                            print(f"[DEBUG] Validation passed")
                         return result
                     else:
-                        print(f"[DEBUG] Validation failed, retrying...")
+                        if self.kernel.agent_logging_enabled:
+                            print(f"[DEBUG] Validation failed, retrying...")
                         # Validation failed, try again
                         routing_prompt = f"Previous result failed validation. Please choose a different agent from: {', '.join(self.agents.keys())}\nSubtask: {task}"
             else:
-                print(f"[DEBUG] Invalid agent name: {agent_name}")
+                if self.kernel.agent_logging_enabled:
+                    print(f"[DEBUG] Invalid agent name: {agent_name}")
                 # Invalid agent name, try again
                 routing_prompt = f"The previous agent name was invalid. Please choose from the following list: {', '.join(self.agents.keys())}\nSubtask: {task}"
             attempts += 1

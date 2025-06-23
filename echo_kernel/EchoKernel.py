@@ -38,6 +38,12 @@ import inspect
 import functools
 from functools import partial
 
+# Import config setting for agent logging
+try:
+    from config import AGENT_LOGGING_ENABLED
+except ImportError:
+    AGENT_LOGGING_ENABLED = True  # Default to True if config not available
+
 T = TypeVar('T')
 
 class EchoKernel:
@@ -53,13 +59,14 @@ class EchoKernel:
         _tools: Dictionary mapping tool names to tool instances
     """
     
-    def __init__(self, text_provider: Optional[ITextProvider] = None, embedding_provider: Optional[IEmbeddingProvider] = None, storage_provider: Optional[IStorageProvider] = None, tools: Optional[List[EchoTool]] = None):
+    def __init__(self, text_provider: Optional[ITextProvider] = None, embedding_provider: Optional[IEmbeddingProvider] = None, storage_provider: Optional[IStorageProvider] = None, tools: Optional[List[EchoTool]] = None, agent_logging_enabled: bool = AGENT_LOGGING_ENABLED):
         """Initialize the EchoKernel."""
         self._text_providers: List[ITextProvider] = []
         self._embedding_providers: List[IEmbeddingProvider] = []
         self._memory_providers: List[ITextMemory] = []
         self._storage_providers: List[IStorageProvider] = []
         self._tools: dict[str, EchoTool] = {}
+        self._agent_logging_enabled = agent_logging_enabled
         if text_provider:
             self._text_providers.append(text_provider)
         if embedding_provider:
@@ -93,6 +100,11 @@ class EchoKernel:
     def storage_provider(self) -> Optional[IStorageProvider]:
         """Get the first registered storage provider."""
         return self._storage_providers[0] if self._storage_providers else None
+
+    @property
+    def agent_logging_enabled(self) -> bool:
+        """Get whether agent logging is enabled."""
+        return self._agent_logging_enabled
 
     def register_provider(self, provider: any) -> None:
         """

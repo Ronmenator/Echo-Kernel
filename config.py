@@ -14,4 +14,8 @@ AZURE_OPENAI_EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_MODEL", "")
 # Qdrant Configuration
 QDRANT_URL = os.getenv("QDRANT_URL", "")
 QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "") 
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
+
+# Agent Logging Configuration
+# Set to False to disable print statements in agents
+AGENT_LOGGING_ENABLED = os.getenv("AGENT_LOGGING_ENABLED", "True").lower() == "true" 

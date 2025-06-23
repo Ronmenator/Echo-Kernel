@@ -20,6 +20,8 @@ python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
 python examples/web-access-example.py
 python examples/web-search-example.py
+python examples/agent-logging-example.py
+python examples/collaborative-agent-example.py
 ```
 
 ### Option 2: Run from Root Directory
@@ -32,6 +34,8 @@ python examples/task-decomposer.py
 python examples/agent-routing-with-memory.py
 python examples/web-access-example.py
 python examples/web-search-example.py
+python examples/agent-logging-example.py
+python examples/collaborative-agent-example.py
 ```
 
 ### Option 3: Run from Examples Directory
@@ -45,6 +49,8 @@ python task-decomposer.py
 python agent-routing-with-memory.py
 python web-access-example.py
 python web-search-example.py
+python agent-logging-example.py
+python collaborative-agent-example.py
 ```
 
 ## Available Examples
@@ -83,6 +89,24 @@ Demonstrates the new search provider system:
 - **EchoKernel integration** with search tools
 - **Provider configuration** and fallback mechanisms
 - Shows how to use different search engines for web queries
+
+### agent-logging-example.py
+Demonstrates how to control agent logging behavior:
+- **Three different methods** to enable/disable agent logging
+- **Kernel constructor parameter** for explicit control
+- **Environment variable configuration** for global settings
+- **Side-by-side comparison** of logging enabled vs disabled
+- Shows how agents run silently when logging is disabled
+- Useful for production environments or cleaner output
+
+### collaborative-agent-example.py
+Demonstrates the new CollaborativeAgent for iterative workflows:
+- **Editor-Writer collaboration** for content creation and refinement
+- **Code Reviewer-Developer collaboration** for code improvement
+- **Silent collaboration** with logging disabled for production use
+- **Customizable stop phrases** to control when collaboration ends
+- **Role-based prompts** that adapt to each agent's specialty
+- Perfect for iterative improvement workflows and quality assurance
 
 ### novella-writer.py
 Advanced example demonstrating multi-level task decomposition for creative writing:
