@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional
 import openai
 import json
+import asyncio
+from openai import RateLimitError
 from ..ITextProvider import ITextProvider
 
 class OpenAITextProvider(ITextProvider):
@@ -24,17 +26,27 @@ class OpenAITextProvider(ITextProvider):
         messages.append({"role": "user", "content": prompt})
         
         while True:
-            response = await openai.ChatCompletion.acreate(
-                model=self.model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                top_p=top_p,
-                frequency_penalty=frequency_penalty,
-                presence_penalty=presence_penalty,
-                tools=tools,
-                tool_choice="auto" if tools else None
-            )
+            try:
+                response = await openai.ChatCompletion.acreate(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    top_p=top_p,
+                    frequency_penalty=frequency_penalty,
+                    presence_penalty=presence_penalty,
+                    tools=tools,
+                    tool_choice="auto" if tools else None
+                )
+            except RateLimitError as e:
+                # Extract retry time from error response
+                retry_after = getattr(e, 'retry_after', 60)  # Default to 60 seconds if not specified
+                wait_time = retry_after + 2  # Add 2 seconds buffer
+                await asyncio.sleep(wait_time)
+                continue
+            except Exception as e:
+                # Re-raise any other exceptions
+                raise e
             
             message = response.choices[0].message
             message_content = message.content

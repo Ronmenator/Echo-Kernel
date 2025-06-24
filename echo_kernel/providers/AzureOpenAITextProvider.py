@@ -1,7 +1,9 @@
 from typing import Dict, List
 from echo_kernel.ITextProvider import ITextProvider
 from openai import AzureOpenAI
+from openai import RateLimitError
 import json
+import asyncio
 
 class AzureOpenAITextProvider(ITextProvider):
     def __init__(self, api_key: str, api_base: str, api_version: str, model: str):
@@ -27,28 +29,38 @@ class AzureOpenAITextProvider(ITextProvider):
             messages.insert(1, {"role": "user", "content": context})
 
         while True:
-            if tools:
-                response = self.client.chat.completions.create(
+            try:
+                if tools:
+                    response = self.client.chat.completions.create(
+                            model=self.model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            top_p=top_p,
+                            frequency_penalty=frequency_penalty,
+                            presence_penalty=presence_penalty,
+                            tools=tools,
+                            tool_choice="auto"
+                        )
+                else:
+                    response = self.client.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         temperature=temperature,
                         max_tokens=max_tokens,
                         top_p=top_p,
                         frequency_penalty=frequency_penalty,
-                        presence_penalty=presence_penalty,
-                        tools=tools,
-                        tool_choice="auto"
+                        presence_penalty=presence_penalty
                     )
-            else:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    top_p=top_p,
-                    frequency_penalty=frequency_penalty,
-                    presence_penalty=presence_penalty
-                )
+            except RateLimitError as e:
+                # Extract retry time from error response
+                retry_after = getattr(e, 'retry_after', 60)  # Default to 60 seconds if not specified
+                wait_time = retry_after + 2  # Add 2 seconds buffer
+                await asyncio.sleep(wait_time)
+                continue
+            except Exception as e:
+                # Re-raise any other exceptions
+                raise e
 
             message_content = response.choices[0].message.content
             tool_content = response.choices[0].message.tool_calls
