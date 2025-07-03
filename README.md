@@ -1,5 +1,7 @@
 # EchoKernel
 
+Please Note: I am not always active on this repository, but do work on it from time to time as and when required
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -17,10 +19,15 @@ EchoKernel is a flexible and extensible Python framework for building AI-powered
 
 ## 📦 Installation
 
-### Option 1: Install from PyPI (Recommended)
+### Option 1: Install (Recommended)
+
+Note! Not registered on PyPI at the moment
+
+- Download the release and put it in a folder (I put it in my app folder under a 'dist' directory)
+- Run the following command, in the root of the folder
 
 ```bash
-pip install echo-kernel
+pip install dist/echo-kernel-0.1.11-py3-none-any.whl
 ```
 
 ### Option 2: Install from Source
@@ -33,20 +40,14 @@ cd Echo-Py
 
 2. Install dependencies:
 ```bash
+python -m venv .venv
+.venv/scripts/activate
 pip install -r requirements.txt
 ```
 
 3. (Optional) Install in development mode:
 ```bash
 pip install -e .
-```
-
-### Option 3: Install with Development Dependencies
-
-For development and testing:
-
-```bash
-pip install echo-kernel[dev]
 ```
 
 ### Command-Line Interface
@@ -398,7 +399,8 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### Example Output
+# Example Output, everything until we get to END HERE is what the code above produced
+## START HERE
 
 When you run this code, the TaskDecomposerAgent automatically breaks down the complex task and coordinates execution:
 
@@ -482,8 +484,6 @@ You will need the `requests` library to make API calls. You can install it using
 pip install requests
 ```
 
-### Step 3: Write Python Code to Fetch Weather Data
-
 Here's a simple implementation:
 
 ```python
@@ -531,13 +531,12 @@ if __name__ == "__main__":
         print(f"Wind Speed: {weather_data['wind_speed']} m/s")
 ```
 
-### Step 4: Replace Placeholder
 Make sure to replace `YOUR_API_KEY` with the actual API key you received from OpenWeatherMap.
 
-### Step 5: Run the Code
 You can run the script, and it should print the current weather data for the specified city.
 
-### Optional: Handle Additional Features
+Optional: Handle Additional Features
+
 You might want to enhance the script by:
 - Adding command-line arguments to specify the city and API key.
 - Implementing caching for frequent requests to avoid hitting the API limits.
@@ -588,7 +587,7 @@ alert_status, message = rain_detection(weather_data_example)
 print(message)
 ```
 
-### Explanation:
+Explanation:
 1. **Function Definition**: The `rain_detection` function takes a dictionary called `weather_data` as input.
 2. **Extracting Data**: It extracts the probability of precipitation, amount of rain, and weather conditions from the input data.
 3. **Setting Criteria**:
@@ -613,7 +612,7 @@ To implement a notification system that alerts users when rain is detected, we c
 
 5. **Integration**: Combine all these components into a cohesive system.
 
-### Implementation Steps
+Implementation Steps:
 
 1. **Set Up a Weather API**:
    - Sign up for a weather API (e.g., OpenWeatherMap) and get an API key.
@@ -628,7 +627,7 @@ To implement a notification system that alerts users when rain is detected, we c
 4. **User Management**:
    - For simplicity, we will store emails in a list.
 
-### Example Code
+Example Code:
 
 Here's a simple implementation in Python:
 
@@ -686,15 +685,13 @@ if __name__ == "__main__":
     run_notification_system()
 ```
 
-### Explanation:
+Explanation:
 
 1. **Weather Check**: The `check_weather` function fetches weather data from the OpenWeatherMap API. If rain is detected in the weather description, it calls the `send_notification` function.
-
 2. **Sending Email**: The `send_notification` function constructs an email message and sends it using SMTP.
-
 3. **Scheduling**: The `run_notification_system` function runs an infinite loop that checks the weather every hour (3600 seconds).
 
-### Notes:
+Notes:
 - Replace placeholders like `YOUR_API_KEY`, `YOUR_CITY`, and SMTP server details with actual values.
 - For production use, consider using environment variables for sensitive information.
 - Implement error handling and logging for better reliability.
@@ -705,7 +702,7 @@ This is a basic implementation and can be extended or modified based on specific
 Subtask 5 Result:
 To conduct thorough testing of a system, especially one involving API integration, rain detection logic, and notification delivery, we can approach it methodically:
 
-### Step 1: Define Test Cases
+Step 1: Define Test Cases
 1. **API Integration Tests**:
    - Test successful API calls to fetch weather data.
    - Test handling of API errors (e.g., 404, 500 responses).
@@ -721,10 +718,10 @@ To conduct thorough testing of a system, especially one involving API integratio
    - Test handling of notification failures (e.g., network issues).
    - Test different notification channels (email, SMS, push notifications).
 
-### Step 2: Implement Test Functions
+Step 2: Implement Test Functions
 We can implement mock functions to simulate the API calls, rain detection logic, and notification delivery.
 
-### Step 3: Execute Tests
+Step 3: Execute Tests
 We can execute the tests and check the results.
 
 Since I can't perform real API calls or send notifications, I will provide a sample mock implementation in Python to illustrate how you might set up these tests.
@@ -800,12 +797,12 @@ test_send_notification()
 print("All tests passed!")
 ```
 
-### Explanation
+Explanation
 - **Mocking**: We use mocking to simulate API responses without making actual network requests.
 - **Assertions**: Each test checks if the expected output matches the actual output.
 - **Print Capturing**: For the notification function, we capture printed output to verify that the correct message is sent.
 
-### Conclusion
+Conclusion
 This is a simplified way to test the system. In a real-world scenario, you would likely use a testing framework like `unittest` or `pytest` and have more comprehensive tests, including performance testing and integration testing.
 ```
 
@@ -822,8 +819,9 @@ query = "Write a script to get weather data using the OpenWeatherMap API. Make i
 result = await looping_agent.run(query)
 print("\n[Final Output]\n", result)
 ```
+## END HERE
 
-#### Multi-Agent Routing
+# Multi-Agent Routing
 
 ```python
 # Create specialized agents
@@ -904,22 +902,6 @@ This is the power of EchoKernel's agent system - complex AI workflows made simpl
 
 To see the agent system in action, check out the examples in the `examples/` directory:
 
-### Install in Development Mode (Recommended)
-
-```bash
-pip install -e .
-```
-
-### Run Examples
-
-```bash
-# Complex multi-agent routing example
-python examples/agent-routing.py
-
-# Task decomposition example
-python examples/task-decomposer.py
-```
-
 For more details on running examples, see [examples/README.md](examples/README.md).
 
 ## Available Providers
@@ -979,7 +961,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 💬 Discussions: [GitHub Discussions](https://github.com/Ronmenator/Echo-Py/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/Ronmenator/Echo-Py/issues)
-
----
-
-**Made with ❤️ by [Ronmenator](https://github.com/Ronmenator)** 
